@@ -38,14 +38,19 @@ class NoncollaborativeStochastic(Model):
     for i in range(1, self.M + 1):  # demethylations
       self.events.append({"type": 3, "rate": self.r_mu * i, "start": i})
   
-  def run(self, n_initial, t):
+  def run(self, n_initial, t, max_steps = 100000):
     n = [_ for _ in n_initial]
+    step_count = 0
     while True:
-      
+      step_count += 1
       # get total rate
       total_rate = 0
       for event in self.events:
         total_rate += self._get_rate(n, event)
+
+      if step_count > max_steps:
+        raise RateTooLargeException('Simulation exceeded maximum steps!')
+
 
       # get waiting time
       if total_rate == 0:
@@ -68,9 +73,23 @@ class NoncollaborativeStochastic(Model):
     return n
 
   
-  def get_extinction(self):
-    pass
-            
+  def get_extinction(self, attempts_per_type : int):
+    extinction_rates = []
+    t = 100
+    for i in range(self.M + 1):
+      print(f'running simulations starting with single cell of type {i}')
+      extinct_count = 0
+      for j in range(attempts_per_type):
+        try: 
+          n_initial = [0] * (self.M + 1)
+          n_initial[i] = 1
+          outcome = self.run(n_initial, t, max_steps=1000)
+          if sum(outcome) == 0:
+            extinct_count += 1
+        except RateTooLargeException:
+          continue
+      extinction_rates.append(extinct_count / attempts_per_type)
+    return extinction_rates 
 
   def _get_rate(self, n, event):
       return n[event["start"]] * event["rate"]
@@ -158,3 +177,9 @@ class NoncollaborativeDeterministic(Model):
       subtotal -= (self.b)                   # birth
     return subtotal
 
+
+
+
+
+class RateTooLargeException(Exception):
+  """Raised when the total rate is too large to be worthwhile for simulations to continue"""

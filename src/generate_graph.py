@@ -3,7 +3,7 @@ import plot
 import models
 
 if __name__ == '__main__':
-    params = constants.TOY_PARAMS
+    params = constants.TOY_DYING_PARAMS
     M = 5
     params[0] = M
     n_initial = constants.TOY_INITIAL(M)
