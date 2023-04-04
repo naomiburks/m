@@ -15,8 +15,8 @@ class Model:
       data.append(current)
     return np.array(data), timepoints
 
-  def run():
-    pass
+  def run(self, n_initial, t):
+    return n_initial
 
 class NoncollaborativeStochastic(Model):
   def __init__(self, params):
@@ -39,11 +39,7 @@ class NoncollaborativeStochastic(Model):
       self.events.append({"type": 3, "rate": self.r_mu * i, "start": i})
   
   def run(self, n_initial, t):
-    event_rates = [event["rate"] for event in self.events]
-    event_types = [event["type"] for event in self.events]
-    # make n
     n = [_ for _ in n_initial]
-    
     while True:
       
       # get total rate
@@ -72,6 +68,8 @@ class NoncollaborativeStochastic(Model):
     return n
 
   
+  def get_extinction(self):
+    pass
             
 
   def _get_rate(self, n, event):
@@ -124,13 +122,10 @@ class NoncollaborativeDeterministic(Model):
     for i in range(self.M + 1):
       T.append([self._get_flow(i, j) for j in range(self.M + 1)])    
     self.T = np.array(T)
-        
   
   def run(self, n_initial, t):
     n = np.array(n_initial) @ expm(self.T * t)
     return n
-
-
 
   def get_stable_state(self):
     w, vl = eig(self.T, left=True, right=False)
@@ -150,13 +145,13 @@ class NoncollaborativeDeterministic(Model):
   # calculates the flow from i -> j
   def _get_flow(self, i, j):
     subtotal = 0    
-    if i == j - 1:  # increase due to methylation
+    if i == j - 1:  # inward flow due to methylation
       subtotal += (self.M - i) * self.r_um
-    if i == j + 1:  # increase due to demethylation
+    if i == j + 1:  # inward flow due to demethylation
       subtotal += i * self.r_mu
-    if i >= j:      # increase due to birth
+    if i >= j:      # inward flow due to birth
       subtotal += 2 * self.b * comb(i, j) * (self.p) ** j * (1 - self.p) ** (i - j)
-    if i == j:      # decreases
+    if i == j:      # outward flows
       subtotal -= (self.d_0 + i / self.M * (self.d_M - self.d_0))  # death
       subtotal -= i * self.r_mu              # demethylation
       subtotal -= (self.M - i) * self.r_um   # methylation
