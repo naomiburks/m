@@ -77,7 +77,7 @@ class NoncollaborativeStochastic(Model):
     extinction_rates = []
     t = 100
     for i in range(self.M + 1):
-      print(f'running simulations starting with single cell of type {i}')
+      print(f'running {attempts_per_type} simulations starting with single cell of type {i}')
       extinct_count = 0
       for j in range(attempts_per_type):
         try: 
