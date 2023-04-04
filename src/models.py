@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import comb
 from scipy.linalg import expm, eig
-
+from scipy.optimize import root
 
 class Model:
 
@@ -73,13 +73,13 @@ class NoncollaborativeStochastic(Model):
     return n
 
   
-  def get_extinction(self, attempts_per_type : int):
+  def sample_extinction(self, attempts_per_type : int):
     extinction_rates = []
     t = 100
     for i in range(self.M + 1):
       print(f'running {attempts_per_type} simulations starting with single cell of type {i}')
       extinct_count = 0
-      for j in range(attempts_per_type):
+      for _ in range(attempts_per_type):
         try: 
           n_initial = [0] * (self.M + 1)
           n_initial[i] = 1
@@ -91,8 +91,59 @@ class NoncollaborativeStochastic(Model):
       extinction_rates.append(extinct_count / attempts_per_type)
     return extinction_rates 
 
+
+  def find_extinction_probabilities(self, guess):
+    f = self.get_extinction_function()
+    return root(f, guess)
+
+  def get_extinction_function(self):
+    return lambda x : np.subtract(x, self._get_extinction_by_first_step(x))
+
+  def _r_d(self, i):
+    return (self.d_0 * (self.M - i) + self.d_M * i) / self.M
+
+  def _r_m(self, i):
+    return (self.M - i) * self.r_um
+  
+  def _r_u(self, i):
+    return i * self.r_mu
+
+  def _r_b(self, i):
+    return self.b
+
+  def _f(self, i : int, event_type : str):
+    if event_type == 'b':
+      num = self._r_b(i)
+    elif event_type == 'd':
+      num = self._r_d(i)
+    elif event_type == 'u':
+      num = self._r_u(i)
+    elif event_type == 'm':
+      num = self._r_m(i)
+    else:
+      raise TypeError('event_type should be one of b, d, u, or m')
+    
+    denom = self._r_b(i) + self._r_d(i) + self._r_u(i) + self._r_m(i)
+    
+    return num / denom
+
   def _get_rate(self, n, event):
       return n[event["start"]] * event["rate"]
+
+
+  def _get_extinction_by_first_step(self, extinction_rates):
+    new_extinction_rates = []
+    for i in range(self.M + 1):
+      p = 0
+      if i != 0:
+        p += self._f(i, 'u') * extinction_rates[i - 1]
+      if i != self.M:
+        p += self._f(i, 'm') * extinction_rates[i + 1]
+      p += self._f(i, 'b') * (extinction_rates[i] ** 2)
+      p += self._f(i, 'd')
+      new_extinction_rates.append(p)
+    return new_extinction_rates
+  
 
   def _implement_event(self, event, n):
     event_type = event["type"]
