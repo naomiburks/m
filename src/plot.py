@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 def generate_graph(data, timepoints):
-
+    plt.figure(figsize=(15, 10))
     plt.grid(visible = True)
     plt.xlim(0, timepoints[-1])
     plt.ylim(0, max([max(row) for row in data]))
