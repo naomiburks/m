@@ -17,3 +17,18 @@ def generate_graph(data, timepoints):
 
     plt.show()
 
+def generate_extinction_graph(simulated_data, true_data):
+    site_count = len(simulated_data)
+    plt.figure(figsize=(15, 10))
+    plt.grid(visible = True)
+    plt.xlim(0, site_count)
+    plt.ylim(0, 1)
+    plt.xlabel('number of methylated sites that cell has',fontsize=20)
+    plt.ylabel('extinction probability starting with a single cell',fontsize=20)
+
+    plt.plot(range(site_count), simulated_data, label = 'monte carlo simulated extinction rate')
+    plt.plot(range(site_count), true_data, label = 'calculated extinction rate')
+    plt.legend(loc = 'upper right')
+
+    plt.show()
+
