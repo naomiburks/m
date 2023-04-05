@@ -1,4 +1,4 @@
-"""parameters are, in order: M, b, d0, dM, r_um, r_mu, """
+"""parameters are, in order: M, b, d0, dM, r_um, r_mu, p"""
 
 
 TOY_DYING_PARAMS = [
