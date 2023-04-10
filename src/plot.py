@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 def generate_graph(data, timepoints):
-    plt.figure(figsize=(15, 10))
+    plt.figure(figsize=(14, 9))
     plt.grid(visible = True)
     plt.xlim(0, timepoints[-1])
     plt.ylim(0, max([max(row) for row in data]))
@@ -28,7 +28,7 @@ def generate_extinction_graph(simulated_data, true_data):
 
     plt.plot(range(site_count + 1), simulated_data, label = 'monte carlo simulated extinction rate')
     plt.plot(range(site_count + 1), true_data, label = 'calculated extinction rate')
-    plt.legend(loc = 'upper right')
+    plt.legend(loc = 'lower left')
 
     plt.show()
 

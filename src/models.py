@@ -96,6 +96,11 @@ class NoncollaborativeStochastic(Model):
     f = self.get_extinction_function()
     return root(f, guess)
 
+  def find_extinction_probabilities_guessless(self):
+    # we calculate the probabilities if all r_mu and r_um are 0
+    guess = [min(self._r_d(i) / self._r_b(i), 1) for i in range(self.M + 1)]
+    return self.find_extinction_probabilities(guess)
+
   def get_extinction_function(self):
     return lambda x : np.subtract(x, self._get_extinction_by_first_step(x))
 
