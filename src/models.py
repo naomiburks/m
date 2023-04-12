@@ -2,7 +2,7 @@ import numpy as np
 from scipy.special import comb
 from scipy.linalg import expm, eig
 from scipy.optimize import root
-
+from scipy.integrate import odeint
 class Model:
 
   def generate_timepoint_data(self, n_initial, duration : float, timestep_count : int):
@@ -83,7 +83,7 @@ class NoncollaborativeStochastic(Model):
         try: 
           n_initial = [0] * (self.M + 1)
           n_initial[i] = 1
-          outcome = self.run(n_initial, t, max_steps=1000)
+          outcome = self.run(n_initial, t, max_steps=10000)
           if sum(outcome) == 0:
             extinct_count += 1
         except RateTooLargeException:
@@ -91,18 +91,51 @@ class NoncollaborativeStochastic(Model):
       extinction_rates.append(extinct_count / attempts_per_type)
     return extinction_rates 
 
-
-  def find_extinction_probabilities(self, guess):
-    f = self.get_extinction_function()
-    return root(f, guess)
-
-  def find_extinction_probabilities_guessless(self):
+  def find_extinction_probabilities(self):
     # we calculate the probabilities if all r_mu and r_um are 0
     guess = [min(self._r_d(i) / self._r_b(i), 1) for i in range(self.M + 1)]
-    return self.find_extinction_probabilities(guess)
+    f = self._get_extinction_function()
+    return root(f, guess)
 
-  def get_extinction_function(self):
+  def find_limit_extinction_probabilities(self, point_count = 1000):
+    func = self._get_limit_extinction_derivative()
+    initial_x = self.r_um / (self.r_mu + self.r_um)
+    initial_y = self._get_limit_extinction_initial_probability()
+    all_times = [i / point_count for i in range(point_count + 1)]
+    low_times = [time for time in all_times if time < initial_x] + [initial_x]
+    high_times = [initial_x] + [time for time in all_times if time > initial_x]
+
+    # get probabilities below the "stable" x
+    low_res = odeint(func, initial_y, list(reversed(low_times)))
+
+    # get probabilities above the "stable" x  
+    high_res = odeint(func, initial_y, high_times)
+
+    # combine probabilities into one list
+    res = list(reversed(low_res[:,0][1:])) + list(high_res[:,0][1:])
+
+    return res
+
+
+
+
+  def _get_extinction_function(self):
     return lambda x : np.subtract(x, self._get_extinction_by_first_step(x))
+
+  def _get_limit_extinction_derivative(self):
+    def derivative(y, x):
+      if x == self.r_um / (self.r_mu + self.r_um):
+        if y == 1:
+          return 0
+        return ((self._r_d(self.M * x) - self._r_b(self.M * x))
+            / (self._r_d(self.M * x) * self._r_b(self.M * x) * (self.r_um + self.r_mu)))
+      return (self._r_b(x * self.M) * y - self._r_d(x * self.M)) * (1 - y) \
+        / (- x * self.r_mu + (1 - x) * self.r_um) 
+    return derivative
+
+  def _get_limit_extinction_initial_probability(self):
+    x = (self.r_um) / (self.r_mu + self.r_um)
+    return min(self._r_d(self.M * x) / self._r_b(self.M * x), 1)
 
   def _r_d(self, i):
     return (self.d_0 * (self.M - i) + self.d_M * i) / self.M

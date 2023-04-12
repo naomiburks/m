@@ -12,12 +12,22 @@ TOY_DYING_PARAMS = [
   ]
 
 TOY_LIVING_PARAMS = [
+    10, 
+    1.8, 
+    3, 
+    1, 
+    0.6, 
+    0.3, 
+    1, 
+  ]
+
+TOY_BARELY_LIVING_PARAMS = [
     100, 
     1.8, 
     3, 
     1, 
-    0, 
-    0, 
+    0.036, 
+    0.036, 
     1, 
   ]
 
