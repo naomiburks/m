@@ -62,4 +62,3 @@ def plot_extinction_limit_graph(data, param_info):
     plt.legend(loc = 'lower left')
 
     plt.show()
-

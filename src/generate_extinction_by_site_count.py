@@ -4,7 +4,7 @@ import plot
 
 
 if __name__ == '__main__':
-    base_params = constants.TOY_LIVING_PARAMS
+    base_params = constants.TOY_BARELY_LIVING_PARAMS
     data = []
     for M in [3, 10, 30, 100]:
         params = [param for param in base_params]

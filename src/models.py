@@ -267,8 +267,87 @@ class NoncollaborativeDeterministic(Model):
     return subtotal
 
 
+class NoncollaborativeStochasticFull(Model):
+  """This is a refactored, full version of the noncollaborative model that takes into account
+  varying birthrates and a better way (dictionary) to specify parameters"""
 
+  def __init__(self, params):
+    self.b_0 = params['b_0']
+    self.b_M = params['b_M']
+    self.d_0 = params['d_0']
+    self.d_M = params['d_M']
+    self.r_um = params['r_um']
+    self.r_mu = params['r_mu']
+    self.p = params['p']
+    self.M = params['M']
 
+    self.events = []
+
+    for i in range(self.M + 1):
+      self.events.append({'type': 'birth', 'rate': self._r_b(i), 'cell': i})
+      self.events.append({'type': 'death', 'rate': self._r_d(i), 'cell': i})
+      self.events.append({'type': 'methylation', 'rate': self._r_um(i), 'cell': i})
+      self.events.append({'type': 'demethylation', 'rate': self._r_mu(i), 'cell': i})
+
+  def run(self, n_initial, t, max_steps = 100000):
+    n = n_initial[:]
+    while True:
+
+      total_rate = self._get_total_rate(n)
+      # if total rate is 0, there will be no more events
+      if total_rate == 0:
+        break
+      waiting_time = - np.log(np.random.random()) / total_rate
+      t -= waiting_time
+      # if next time of event is too late, no more events
+      if t < 0:
+        break
+
+      # find which event is next
+      event_rng = total_rate * np.random.random()
+      for event in self.events:
+        event_rate = event["rate"] * n[event["cell"]]
+        event_rng -= event_rate
+        if event_rng < 0:
+          found_event = event
+          break
+      # update cell counts by what the event does
+      self._implement_event(found_event, n)
+    return n
+
+  def _r_b(self, i):
+    return self.b_0 + (self.b_M - self.b_0) * i / self.M
+
+  def _r_d(self, i):
+    return self.d_0 + (self.d_M - self.d_0) * i / self.M
+  
+  def _r_um(self, i):
+    return (self.M - i) * self.r_um
+  
+  def _r_mu(self, i):
+    return self.M * self.r_mu
+  
+  def _get_total_rate(self, n):
+    subtotal_rate = 0
+    for event in self.events:
+      subtotal_rate += event['rate'] * n[event['cell']]
+    return subtotal_rate
+  
+  def _implement_event(self, event, n):
+    event_type = event["type"]
+    cell = event["cell"]
+    if event_type == 'birth':
+      n[cell] = n[cell] + 1
+    elif event_type == 'death':
+      n[cell] = n[cell] - 1
+    elif event_type == 'methylation':
+      n[cell] = n[cell] - 1
+      n[cell + 1] = n[cell + 1] + 1 
+    elif event_type == 'demethylation':
+      n[cell] = n[cell] - 1
+      n[cell - 1] = n[cell - 1] + 1 
+    else: 
+      print('unrecognized event type')
 
 class RateTooLargeException(Exception):
   """Raised when the total rate is too large to be worthwhile for simulations to continue"""
