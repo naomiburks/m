@@ -1,6 +1,7 @@
-import constants
-import models
 import matplotlib.pyplot as plt
+import constants
+from tools import models
+
 
 
 def plot_varying_methylation(data, scales, param_info = None):
@@ -28,7 +29,7 @@ def plot_varying_methylation(data, scales, param_info = None):
 
 
 if __name__ == '__main__':
-    base_params = constants.TOY_LIVING_PARAMS
+    base_params = constants.LIVING_DEATHRATE_PARAMS
 
 
     ratio = 2
@@ -37,18 +38,18 @@ if __name__ == '__main__':
     r_mus = [scale for scale in scales]
     r_ums = [ratio * scale for scale in scales]
     for scale in scales:
-        model_params = base_params[:]
-        model_params[4] = ratio * scale
-        model_params[5] = scale
+        model_params = base_params.copy()
+        model_params['r_um'] = ratio * scale
+        model_params['r_mu'] = scale
         model = models.NoncollaborativeStochastic(model_params)
-        extinction_rates = model.find_limit_extinction_probabilities()
+        extinction_rates = model.calculate_limit_extinction_rates()
         data.append(extinction_rates)
     
     param_info = ('Other parameters:\n' + 
-                    'M: infinite\n' +
-                    f'b: {base_params[1]}\nd_0: {base_params[2]}\n' + 
-                    f'd_M: {base_params[3]}\nr_um / r_mu: {ratio}\n' + 
-                    f'p: {base_params[6]}')
+                    f"M: infinite\nb_0: {base_params['b_0']}" +
+                    f"b_M: {base_params['b_M']}\nd_0: {base_params['d_0']}\n" + 
+                    f"d_M: {base_params['d_M']}\nr_um / r_mu: {ratio}\n" + 
+                    f"p: {base_params['p']}")
     
 
     plot_varying_methylation(data, scales, param_info=param_info)

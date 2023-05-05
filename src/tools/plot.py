@@ -1,17 +1,20 @@
 import matplotlib.pyplot as plt
 
-def plot_simulation(data, timepoints):
+def plot_simulation(data, timepoints, param_info):
     plt.figure(figsize=(14, 9))
     plt.grid(visible = True)
     plt.xlim(0, timepoints[-1])
-    plt.ylim(0, max([max(row) for row in data]))
+    ymax = max([max(row) for row in data]) * 1.05
+    plt.ylim(0, ymax)
     plt.xlabel('time',fontsize=20)
     plt.ylabel('cell counts',fontsize=20)
-
+    
+    
+    plt.text(0, ymax + 1, f'parameters: {param_info}')
     
     for i in range(len(data[0])):
         pop_counts = data[:, i]
-        plt.plot(timepoints, pop_counts, label = f'{i} methylated sites')
+        plt.plot(timepoints, pop_counts, label = f'{i} methylated sites', linewidth=2)
 
     plt.legend(loc = 'upper right')
 
