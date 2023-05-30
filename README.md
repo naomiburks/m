@@ -8,4 +8,4 @@ See requirements.txt. With python3 installed, run pip install -r requirements.tx
 
 ## Getting started
 
-Try running generate_graph using python src/generate_graph.py
+Try running generate_graph using python src/simulate.py
